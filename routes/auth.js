@@ -35,23 +35,27 @@ admin.initializeApp({
 // Firebase Login Verification
 router.post("/login", async (req, res) => {
   try {
-    const { idToken } = req.body; // Expecting Firebase ID token from frontend
-    console.log(`Received Firebase ID token: ${idToken}`);
+      const { email, password, idToken } = req.body;
 
-    // Verify Firebase Token
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const email = decodedToken.email;
+      if (!idToken) {
+          return res.status(400).json({ error: "Missing ID Token" });
+      }
 
-    // Find user in MongoDB
-    let user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ error: "User not found in database" });
-    }
+      // Verify the Firebase ID Token
+      const decodedToken = await admin.auth().verifyIdToken(idToken);
+      console.log("Decoded Token:", decodedToken);
 
-    res.json({ fullName: user.fullName, message: "Login successful" });
+      // Check if user exists
+      const user = await User.findOne({ email });
+      if (!user) {
+          return res.status(400).json({ error: "Invalid credentials" });
+      }
+
+      res.json({ fullName: user.fullName });
   } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ error: "Server error" });
+      console.error("Login error:", err);
+      res.status(500).json({ error: "Server error" });
   }
 });
+
 module.exports = router;
