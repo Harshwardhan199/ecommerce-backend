@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
+const admin = require("firebase-admin");
 
 // Register a new user
 router.post("/register", async (req, res) => {
@@ -25,27 +26,32 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.post("/login", async (req, res) => {
-  try {
-      const { email, password } = req.body;
-      console.log(`Login attempt: ${email}`);
-
-      // Find user in MongoDB
-      const user = await User.findOne({ email });
-      if (!user) {
-          return res.status(400).json({ error: "Invalid credentials" });
-      }
-
-      // Validate password
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-          return res.status(400).json({ error: "Invalid credentials" });
-      }
-
-      res.json({ fullName: user.fullName });
-  } catch (err) {
-      res.status(500).json({ error: "Server error" });
-  }
+// Initialize Firebase Admin SDK
+const serviceAccount = require("../path/to/your/firebase-adminsdk.json"); // Download from Firebase Console
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
 });
 
+// Firebase Login Verification
+router.post("/login", async (req, res) => {
+  try {
+    const { idToken } = req.body; // Expecting Firebase ID token from frontend
+    console.log(`Received Firebase ID token: ${idToken}`);
+
+    // Verify Firebase Token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const email = decodedToken.email;
+
+    // Find user in MongoDB
+    let user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ error: "User not found in database" });
+    }
+
+    res.json({ fullName: user.fullName, message: "Login successful" });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 module.exports = router;
