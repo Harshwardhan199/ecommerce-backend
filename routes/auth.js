@@ -27,7 +27,7 @@ router.post("/register", async (req, res) => {
 });
 
 // Initialize Firebase Admin SDK
-const serviceAccount = require("../path/to/your/firebase-adminsdk.json"); // Download from Firebase Console
+const serviceAccount = require("../firebase-adminsdk.json"); // Download from Firebase Console
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
