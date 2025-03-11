@@ -58,4 +58,24 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.get("/userdata", async (req, res) => {
+  try {
+      const authToken = req.headers.authorization?.split(" ")[1];
+      if (!authToken) {
+          return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const decodedToken = await admin.auth().verifyIdToken(authToken);
+      const user = await User.findOne({ userId: decodedToken.uid });
+
+      if (!user) {
+          return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json({ fullName: user.fullName, email: user.email });
+  } catch (error) {
+      res.status(500).json({ error: "Server error" });
+  }
+});
+
 module.exports = router;
