@@ -25,4 +25,27 @@ router.post("/register", async (req, res) => {
   }
 });
 
+router.post("/login", async (req, res) => {
+  try {
+      const { email, password } = req.body;
+      console.log(`Login attempt: ${email}`);
+
+      // Find user in MongoDB
+      const user = await User.findOne({ email });
+      if (!user) {
+          return res.status(400).json({ error: "Invalid credentials" });
+      }
+
+      // Validate password
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+          return res.status(400).json({ error: "Invalid credentials" });
+      }
+
+      res.json({ fullName: user.fullName });
+  } catch (err) {
+      res.status(500).json({ error: "Server error" });
+  }
+});
+
 module.exports = router;
